@@ -21,8 +21,10 @@ init : String -> String -> State
 init code input
   = State (Array.fromList [0]) 0 0 0 "" ((Array.fromList << String.toList) code) input
 
-parse : String -> String -> State
-parse code input = trampoline (parse' (init code input))
+parse : String -> String -> Result String String
+parse code input =
+  if | not (matchedBrackets code) -> Err "Mismatched brackets"
+     | otherwise -> Ok (trampoline (parse' (init code input))).output
 
 parse' : State -> Trampoline State
 parse' state =
@@ -30,6 +32,20 @@ parse' state =
     Done state
   else
     Continue (\() -> parse' (handleCommand state))
+
+-- VALIDATIONS
+
+matchedBrackets : String -> Bool
+matchedBrackets code =
+  let
+    charCount char = String.filter (\c -> c == char) >> String.length
+    leftBracketCount =  charCount '[' code
+    rightBracketCount = charCount ']' code
+  in
+    leftBracketCount == rightBracketCount
+
+
+-- COMMANDS
 
 incrementDataPointer : State -> State
 incrementDataPointer state =

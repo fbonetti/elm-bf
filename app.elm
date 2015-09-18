@@ -37,7 +37,10 @@ update (code,input) model =
   { model |
       code <- code,
       input <- input,
-      output <- (Interpreter.parse code input).output
+      output <-
+        case (Interpreter.parse code input) of
+          Ok msg -> msg
+          Err msg -> msg
   }
 
 -- VIEW
