@@ -12,17 +12,17 @@ type alias State =
   , dataPointer : Int
   , codePointer : Int
   , bracketCounter : Int
-  , input : String
   , output : String
   , code : Array Char
+  , input : String
   }
 
-init : String -> State
-init code
-  = State (Array.fromList [0]) 0 0 0 "" "" ((Array.fromList << String.toList) code)
+init : String -> String -> State
+init code input
+  = State (Array.fromList [0]) 0 0 0 "" ((Array.fromList << String.toList) code) input
 
-parse : String -> State
-parse code = trampoline (parse' (init code))
+parse : String -> String -> State
+parse code input = trampoline (parse' (init code input))
 
 parse' : State -> Trampoline State
 parse' state =
