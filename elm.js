@@ -3669,7 +3669,59 @@ Elm.Interpreter.make = function (_elm) {
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
-   $String = Elm.String.make(_elm);
+   $String = Elm.String.make(_elm),
+   $Trampoline = Elm.Trampoline.make(_elm);
+   var rewind$ = function (state) {
+      return function () {
+         var $byte = A2($Array.get,
+         state.dataPointer,
+         state.data);
+         var $char = A2($Array.get,
+         state.codePointer,
+         state.code);
+         return _U.eq($byte,
+         $Maybe.Just(0)) ? $Trampoline.Done(state) : _U.eq($char,
+         $Maybe.Just(_U.chr("]"))) ? $Trampoline.Continue(function (_v0) {
+            return function () {
+               switch (_v0.ctor)
+               {case "_Tuple0":
+                  return rewind$(_U.replace([["bracketCounter"
+                                             ,state.bracketCounter + 1]
+                                            ,["codePointer"
+                                             ,state.codePointer - 1]],
+                    state));}
+               _U.badCase($moduleName,
+               "between lines 107 and 110");
+            }();
+         }) : _U.eq($char,
+         $Maybe.Just(_U.chr("["))) ? $Trampoline.Continue(function (_v2) {
+            return function () {
+               switch (_v2.ctor)
+               {case "_Tuple0":
+                  return rewind$(_U.replace([["bracketCounter"
+                                             ,state.bracketCounter - 1]
+                                            ,["codePointer"
+                                             ,state.codePointer - 1]],
+                    state));}
+               _U.badCase($moduleName,
+               "between lines 112 and 115");
+            }();
+         }) : $Trampoline.Continue(function (_v4) {
+            return function () {
+               switch (_v4.ctor)
+               {case "_Tuple0":
+                  return rewind$(_U.replace([["codePointer"
+                                             ,state.codePointer - 1]],
+                    state));}
+               _U.badCase($moduleName,
+               "on line 117, column 30 to 85");
+            }();
+         });
+      }();
+   };
+   var rewind = function (state) {
+      return $Trampoline.trampoline(rewind$(state));
+   };
    var outputByte = function (state) {
       return function () {
          var current = A2($Array.get,
@@ -3683,11 +3735,13 @@ Elm.Interpreter.make = function (_elm) {
                                   state.output,
                                   function ($) {
                                      return $String.fromChar($Char.fromCode($));
-                                  }(current._0))]],
+                                  }(current._0))]
+                                 ,["codePointer"
+                                  ,state.codePointer + 1]],
                  state);
                case "Nothing": return state;}
             _U.badCase($moduleName,
-            "between lines 62 and 66");
+            "between lines 86 and 93");
          }();
       }();
    };
@@ -3705,11 +3759,13 @@ Elm.Interpreter.make = function (_elm) {
                                   A2($Basics._op["%"],
                                   current._0 - 1,
                                   256),
-                                  state.data)]],
+                                  state.data)]
+                                 ,["codePointer"
+                                  ,state.codePointer + 1]],
                  state);
                case "Nothing": return state;}
             _U.badCase($moduleName,
-            "between lines 51 and 55");
+            "between lines 72 and 79");
          }();
       }();
    };
@@ -3727,17 +3783,21 @@ Elm.Interpreter.make = function (_elm) {
                                   A2($Basics._op["%"],
                                   current._0 + 1,
                                   256),
-                                  state.data)]],
+                                  state.data)]
+                                 ,["codePointer"
+                                  ,state.codePointer + 1]],
                  state);
                case "Nothing": return state;}
             _U.badCase($moduleName,
-            "between lines 40 and 44");
+            "between lines 58 and 65");
          }();
       }();
    };
    var decrementDataPointer = function (state) {
       return _U.replace([["dataPointer"
-                         ,state.dataPointer - 1]],
+                         ,state.dataPointer - 1]
+                        ,["codePointer"
+                         ,state.codePointer + 1]],
       state);
    };
    var incrementDataPointer = function (state) {
@@ -3745,45 +3805,81 @@ Elm.Interpreter.make = function (_elm) {
       $Array.length(state.data)) ? _U.replace([["data"
                                                ,A2($Array.push,0,state.data)]
                                               ,["dataPointer"
-                                               ,state.dataPointer + 1]],
+                                               ,state.dataPointer + 1]
+                                              ,["codePointer"
+                                               ,state.codePointer + 1]],
       state) : _U.replace([["dataPointer"
-                           ,state.dataPointer + 1]],
+                           ,state.dataPointer + 1]
+                          ,["codePointer"
+                           ,state.codePointer + 1]],
       state);
    };
-   var handleCommand = F2(function ($char,
-   state) {
+   var handleCommand = function (state) {
       return function () {
-         switch ($char + "")
-         {case "+":
-            return incrementByte(state);
-            case "-":
-            return decrementByte(state);
-            case ".":
-            return outputByte(state);
-            case "<":
-            return decrementDataPointer(state);
-            case ">":
-            return incrementDataPointer(state);}
-         return state;
+         var $char = A2($Array.get,
+         state.codePointer,
+         state.code);
+         return function () {
+            switch ($char.ctor)
+            {case "Just":
+               switch ($char._0 + "")
+                 {case "+":
+                    return incrementByte(state);
+                    case "-":
+                    return decrementByte(state);
+                    case ".":
+                    return outputByte(state);
+                    case "<":
+                    return decrementDataPointer(state);
+                    case ">":
+                    return incrementDataPointer(state);
+                    case "]": return rewind(state);}
+                 break;}
+            return _U.replace([["codePointer"
+                               ,state.codePointer + 1]],
+            state);
+         }();
       }();
-   });
-   var State = F3(function (a,
+   };
+   var parse$ = function (state) {
+      return _U.cmp(state.codePointer,
+      $Array.length(state.code)) > -1 ? $Trampoline.Done(state) : $Trampoline.Continue(function (_v14) {
+         return function () {
+            switch (_v14.ctor)
+            {case "_Tuple0":
+               return parse$(handleCommand(state));}
+            _U.badCase($moduleName,
+            "on line 30, column 22 to 49");
+         }();
+      });
+   };
+   var State = F6(function (a,
    b,
-   c) {
+   c,
+   d,
+   e,
+   f) {
       return {_: {}
+             ,bracketCounter: d
+             ,code: f
+             ,codePointer: c
              ,data: a
              ,dataPointer: b
-             ,output: c};
+             ,output: e};
    });
-   var init = A3(State,
-   $Array.fromList(_L.fromArray([0])),
-   0,
-   "");
+   var init = function (code) {
+      return A6(State,
+      $Array.fromList(_L.fromArray([0])),
+      0,
+      0,
+      0,
+      "",
+      function ($) {
+         return $Array.fromList($String.toList($));
+      }(code));
+   };
    var parse = function (code) {
-      return A3($String.foldl,
-      handleCommand,
-      init,
-      code);
+      return $Trampoline.trampoline(parse$(init(code)));
    };
    _elm.Interpreter.values = {_op: _op
                              ,parse: parse};
@@ -10069,6 +10165,38 @@ Elm.Native.Text.make = function(localRuntime) {
 	};
 };
 
+Elm.Native.Trampoline = {};
+Elm.Native.Trampoline.make = function(localRuntime) {
+
+	localRuntime.Native = localRuntime.Native || {};
+	localRuntime.Native.Trampoline = localRuntime.Native.Trampoline || {};
+	if (localRuntime.Native.Trampoline.values)
+	{
+		return localRuntime.Native.Trampoline.values;
+	}
+
+	// trampoline : Trampoline a -> a
+	function trampoline(t)
+	{
+		var tramp = t;
+		while(true)
+		{
+			switch(tramp.ctor)
+			{
+				case "Done":
+					return tramp._0;
+				case "Continue":
+					tramp = tramp._0({ ctor: "_Tuple0" });
+					continue;
+			}
+		}
+	}
+
+	return localRuntime.Native.Trampoline.values = {
+		trampoline: trampoline
+	};
+};
+
 Elm.Native.Transform2D = {};
 Elm.Native.Transform2D.make = function(localRuntime) {
 
@@ -12864,6 +12992,32 @@ Elm.Text.make = function (_elm) {
                       ,Over: Over
                       ,Through: Through};
    return _elm.Text.values;
+};
+Elm.Trampoline = Elm.Trampoline || {};
+Elm.Trampoline.make = function (_elm) {
+   "use strict";
+   _elm.Trampoline = _elm.Trampoline || {};
+   if (_elm.Trampoline.values)
+   return _elm.Trampoline.values;
+   var _op = {},
+   _N = Elm.Native,
+   _U = _N.Utils.make(_elm),
+   _L = _N.List.make(_elm),
+   $moduleName = "Trampoline",
+   $Native$Trampoline = Elm.Native.Trampoline.make(_elm);
+   var trampoline = $Native$Trampoline.trampoline;
+   var Continue = function (a) {
+      return {ctor: "Continue"
+             ,_0: a};
+   };
+   var Done = function (a) {
+      return {ctor: "Done",_0: a};
+   };
+   _elm.Trampoline.values = {_op: _op
+                            ,trampoline: trampoline
+                            ,Done: Done
+                            ,Continue: Continue};
+   return _elm.Trampoline.values;
 };
 Elm.Transform2D = Elm.Transform2D || {};
 Elm.Transform2D.make = function (_elm) {
