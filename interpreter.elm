@@ -3,9 +3,7 @@ module Interpreter (parse) where
 import Array exposing (Array)
 import Char
 import String
-import Maybe exposing (andThen)
 import Trampoline exposing (..)
-import Debug
 
 type alias State =
   { data : Array Int
