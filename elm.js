@@ -3671,19 +3671,78 @@ Elm.Interpreter.make = function (_elm) {
    $Signal = Elm.Signal.make(_elm),
    $String = Elm.String.make(_elm),
    $Trampoline = Elm.Trampoline.make(_elm);
-   var rewind$ = function (state) {
+   var fastForward$ = function (state) {
+      return function () {
+         var $char = A2($Array.get,
+         state.codePointer,
+         state.code);
+         return _U.eq($char,
+         $Maybe.Just(_U.chr("["))) ? $Trampoline.Continue(function (_v0) {
+            return function () {
+               switch (_v0.ctor)
+               {case "_Tuple0":
+                  return fastForward$(_U.replace([["bracketCounter"
+                                                  ,state.bracketCounter + 1]
+                                                 ,["codePointer"
+                                                  ,state.codePointer + 1]],
+                    state));}
+               _U.badCase($moduleName,
+               "between lines 130 and 133");
+            }();
+         }) : _U.eq($char,
+         $Maybe.Just(_U.chr("]"))) ? _U.eq(state.bracketCounter,
+         1) ? $Trampoline.Done(_U.replace([["bracketCounter"
+                                           ,0]],
+         state)) : $Trampoline.Continue(function (_v2) {
+            return function () {
+               switch (_v2.ctor)
+               {case "_Tuple0":
+                  return fastForward$(_U.replace([["bracketCounter"
+                                                  ,state.bracketCounter - 1]
+                                                 ,["codePointer"
+                                                  ,state.codePointer + 1]],
+                    state));}
+               _U.badCase($moduleName,
+               "between lines 138 and 141");
+            }();
+         }) : $Trampoline.Continue(function (_v4) {
+            return function () {
+               switch (_v4.ctor)
+               {case "_Tuple0":
+                  return fastForward$(_U.replace([["codePointer"
+                                                  ,state.codePointer + 1]],
+                    state));}
+               _U.badCase($moduleName,
+               "on line 143, column 30 to 90");
+            }();
+         });
+      }();
+   };
+   var fastForward = function (state) {
+      return $Trampoline.trampoline(fastForward$(state));
+   };
+   var leftBracket = function (state) {
       return function () {
          var $byte = A2($Array.get,
          state.dataPointer,
          state.data);
+         return _U.eq($byte,
+         $Maybe.Just(0)) ? fastForward(_U.replace([["bracketCounter"
+                                                   ,1]],
+         state)) : _U.replace([["codePointer"
+                               ,state.codePointer + 1]],
+         state);
+      }();
+   };
+   var rewind$ = function (state) {
+      return function () {
          var $char = A2($Array.get,
          state.codePointer,
          state.code);
-         return _U.eq($byte,
-         $Maybe.Just(0)) ? $Trampoline.Done(state) : _U.eq($char,
-         $Maybe.Just(_U.chr("]"))) ? $Trampoline.Continue(function (_v0) {
+         return _U.eq($char,
+         $Maybe.Just(_U.chr("]"))) ? $Trampoline.Continue(function (_v6) {
             return function () {
-               switch (_v0.ctor)
+               switch (_v6.ctor)
                {case "_Tuple0":
                   return rewind$(_U.replace([["bracketCounter"
                                              ,state.bracketCounter + 1]
@@ -3691,12 +3750,15 @@ Elm.Interpreter.make = function (_elm) {
                                              ,state.codePointer - 1]],
                     state));}
                _U.badCase($moduleName,
-               "between lines 107 and 110");
+               "between lines 105 and 108");
             }();
          }) : _U.eq($char,
-         $Maybe.Just(_U.chr("["))) ? $Trampoline.Continue(function (_v2) {
+         $Maybe.Just(_U.chr("["))) ? _U.eq(state.bracketCounter,
+         1) ? $Trampoline.Done(_U.replace([["bracketCounter"
+                                           ,0]],
+         state)) : $Trampoline.Continue(function (_v8) {
             return function () {
-               switch (_v2.ctor)
+               switch (_v8.ctor)
                {case "_Tuple0":
                   return rewind$(_U.replace([["bracketCounter"
                                              ,state.bracketCounter - 1]
@@ -3704,23 +3766,36 @@ Elm.Interpreter.make = function (_elm) {
                                              ,state.codePointer - 1]],
                     state));}
                _U.badCase($moduleName,
-               "between lines 112 and 115");
+               "between lines 113 and 116");
             }();
-         }) : $Trampoline.Continue(function (_v4) {
+         }) : $Trampoline.Continue(function (_v10) {
             return function () {
-               switch (_v4.ctor)
+               switch (_v10.ctor)
                {case "_Tuple0":
                   return rewind$(_U.replace([["codePointer"
                                              ,state.codePointer - 1]],
                     state));}
                _U.badCase($moduleName,
-               "on line 117, column 30 to 85");
+               "on line 118, column 30 to 85");
             }();
          });
       }();
    };
    var rewind = function (state) {
       return $Trampoline.trampoline(rewind$(state));
+   };
+   var rightBracket = function (state) {
+      return function () {
+         var $byte = A2($Array.get,
+         state.dataPointer,
+         state.data);
+         return _U.eq($byte,
+         $Maybe.Just(0)) ? _U.replace([["codePointer"
+                                       ,state.codePointer + 1]],
+         state) : rewind(_U.replace([["bracketCounter"
+                                     ,1]],
+         state));
+      }();
    };
    var outputByte = function (state) {
       return function () {
@@ -3833,7 +3908,10 @@ Elm.Interpreter.make = function (_elm) {
                     return decrementDataPointer(state);
                     case ">":
                     return incrementDataPointer(state);
-                    case "]": return rewind(state);}
+                    case "[":
+                    return leftBracket(state);
+                    case "]":
+                    return rightBracket(state);}
                  break;}
             return _U.replace([["codePointer"
                                ,state.codePointer + 1]],
@@ -3843,9 +3921,9 @@ Elm.Interpreter.make = function (_elm) {
    };
    var parse$ = function (state) {
       return _U.cmp(state.codePointer,
-      $Array.length(state.code)) > -1 ? $Trampoline.Done(state) : $Trampoline.Continue(function (_v14) {
+      $Array.length(state.code)) > -1 ? $Trampoline.Done(state) : $Trampoline.Continue(function (_v20) {
          return function () {
-            switch (_v14.ctor)
+            switch (_v20.ctor)
             {case "_Tuple0":
                return parse$(handleCommand(state));}
             _U.badCase($moduleName,

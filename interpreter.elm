@@ -100,21 +100,67 @@ rewind' : State -> Trampoline State
 rewind' state =
   let
     char = Array.get state.codePointer state.code
-    byte = Array.get state.dataPointer state.data
   in
-    if | byte == Just 0 -> Done state
-       | char == Just ']' ->
-           Continue (\() -> rewind' { state |
+    if  | char == Just ']' ->
+            Continue (\() -> rewind' { state |
               bracketCounter <- state.bracketCounter + 1,
               codePointer <- state.codePointer - 1
             })
         | char == Just '[' ->
-            Continue (\() -> rewind' { state |
-              bracketCounter <- state.bracketCounter - 1,
-              codePointer <- state.codePointer - 1
-            })
+            if state.bracketCounter == 1 then
+              Done { state | bracketCounter <- 0 }
+            else
+              Continue (\() -> rewind' { state |
+                bracketCounter <- state.bracketCounter - 1,
+                codePointer <- state.codePointer - 1
+              })
         | otherwise ->
             Continue (\() -> rewind' { state | codePointer <- state.codePointer - 1})
+
+fastForward : State -> State
+fastForward state =
+  trampoline (fastForward' state)
+
+fastForward' : State -> Trampoline State
+fastForward' state =
+  let
+    char = Array.get state.codePointer state.code
+  in
+    if  | char == Just '[' ->
+            Continue (\() -> fastForward' { state |
+              bracketCounter <- state.bracketCounter + 1,
+              codePointer <- state.codePointer + 1
+            })
+        | char == Just ']' ->
+            if state.bracketCounter == 1 then
+              Done { state | bracketCounter <- 0 }
+            else
+              Continue (\() -> fastForward' { state |
+                bracketCounter <- state.bracketCounter - 1,
+                codePointer <- state.codePointer + 1
+              })
+        | otherwise ->
+            Continue (\() -> fastForward' { state | codePointer <- state.codePointer + 1})
+
+leftBracket : State -> State
+leftBracket state =
+  let
+    byte = Array.get state.dataPointer state.data
+  in
+    if byte == Just 0 then 
+      fastForward { state | bracketCounter <- 1 }
+    else
+      { state | codePointer <- state.codePointer + 1 }
+
+rightBracket : State -> State
+rightBracket state =
+  let
+    byte = Array.get state.dataPointer state.data
+  in
+    if byte == Just 0 then 
+      { state | codePointer <- state.codePointer + 1 }
+    else
+      rewind { state | bracketCounter <- 1 }
 
 handleCommand : State -> State
 handleCommand state =
@@ -127,5 +173,6 @@ handleCommand state =
       Just '+' -> incrementByte state
       Just '-' -> decrementByte state
       Just '.' -> outputByte state
-      Just ']' -> rewind state
+      Just '[' -> leftBracket state
+      Just ']' -> rightBracket state
       _ -> { state | codePointer <- state.codePointer + 1 }
