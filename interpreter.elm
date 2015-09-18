@@ -5,6 +5,7 @@ import Char
 import String
 import Maybe exposing (andThen)
 import Trampoline exposing (..)
+import Debug
 
 type alias State =
   { data : Array Int
@@ -148,7 +149,7 @@ leftBracket state =
     byte = Array.get state.dataPointer state.data
   in
     if byte == Just 0 then 
-      fastForward { state | bracketCounter <- 1 }
+      fastForward { state | bracketCounter <- 1, codePointer <- state.codePointer + 1 }
     else
       { state | codePointer <- state.codePointer + 1 }
 
@@ -160,7 +161,7 @@ rightBracket state =
     if byte == Just 0 then 
       { state | codePointer <- state.codePointer + 1 }
     else
-      rewind { state | bracketCounter <- 1 }
+      rewind { state | bracketCounter <- 1, codePointer <- state.codePointer - 1  }
 
 handleCommand : State -> State
 handleCommand state =
