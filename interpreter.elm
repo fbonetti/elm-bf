@@ -12,13 +12,14 @@ type alias State =
   , dataPointer : Int
   , codePointer : Int
   , bracketCounter : Int
+  , input : String
   , output : String
   , code : Array Char
   }
 
 init : String -> State
 init code
-  = State (Array.fromList [0]) 0 0 0 "" ((Array.fromList << String.toList) code)
+  = State (Array.fromList [0]) 0 0 0 "" "" ((Array.fromList << String.toList) code)
 
 parse : String -> State
 parse code = trampoline (parse' (init code))
@@ -92,6 +93,21 @@ outputByte state =
         }
       Nothing ->
         state
+
+inputByte : State -> State
+inputByte state =
+  case (String.uncons state.input) of
+    Just (char, rest) ->
+      { state |
+          input <- rest,
+          data <- (Array.set state.dataPointer (Char.toCode char) state.data),
+          codePointer <- state.codePointer + 1
+      }      
+    Nothing ->
+      { state |
+          data <- (Array.set state.dataPointer 0 state.data),
+          codePointer <- state.codePointer + 1
+      }
 
 rewind : State -> State
 rewind state =
@@ -174,6 +190,7 @@ handleCommand state =
       Just '+' -> incrementByte state
       Just '-' -> decrementByte state
       Just '.' -> outputByte state
+      Just ',' -> inputByte state
       Just '[' -> leftBracket state
       Just ']' -> rightBracket state
       _ -> { state | codePointer <- state.codePointer + 1 }
