@@ -4,6 +4,7 @@ import Array exposing (Array)
 import Char
 import String
 import Trampoline exposing (..)
+import Debug
 
 type alias State =
   { data : Array Int
