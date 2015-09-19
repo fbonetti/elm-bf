@@ -1,7 +1,7 @@
 import Html exposing (..)
 import Html.Events exposing (on, targetValue, onClick)
 import Html.Attributes exposing (value, style, rows, href)
-import Interpreter
+import Bf.Interpreter
 import Signal
 import String
 
@@ -47,7 +47,7 @@ parseCode : Model -> Model
 parseCode model =
   { model |
       output <-
-        case (Interpreter.parse model.code model.input) of
+        case (Bf.Interpreter.parse model.code model.input) of
           Ok msg -> msg
           Err msg -> msg
   }  

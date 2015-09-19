@@ -1,4 +1,4 @@
-module Interpreter (parse) where
+module Bf.Interpreter (parse) where
 
 import Array exposing (Array)
 import Char
