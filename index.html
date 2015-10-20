@@ -4633,7 +4633,7 @@ Elm.Main.make = function (_elm) {
                              _L.fromArray([$Html.text("[")]))
                              ,A2($Html.td,
                              _L.fromArray([cellStyle(_L.fromArray([]))]),
-                             _L.fromArray([$Html.text("if the current byte is 0, jump to the next matching bracket")]))]))
+                             _L.fromArray([$Html.text("if the current byte is zero, jump to the next matching bracket")]))]))
                 ,A2($Html.tr,
                 _L.fromArray([]),
                 _L.fromArray([A2($Html.td,
@@ -4641,7 +4641,7 @@ Elm.Main.make = function (_elm) {
                              _L.fromArray([$Html.text("]")]))
                              ,A2($Html.td,
                              _L.fromArray([cellStyle(_L.fromArray([]))]),
-                             _L.fromArray([$Html.text("if the current byte is 0, rewind to the matching bracket")]))]))]))]));
+                             _L.fromArray([$Html.text("if the current byte is nonzero, rewind to the matching bracket")]))]))]))]));
    var removeWhitespace = function (string) {
       return A2($String.filter,
       function (c) {
