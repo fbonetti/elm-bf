@@ -39,14 +39,14 @@ update : Action -> Model -> Model
 update action model =
   case action of
     NoOp -> model
-    SetCode code -> parseCode { model | code <- code }
-    SetInput input -> parseCode { model | input <- input }
-    SetCodeAndInput code input -> parseCode { model | code <- code, input <- input }
+    SetCode code -> parseCode { model | code = code }
+    SetInput input -> parseCode { model | input = input }
+    SetCodeAndInput code input -> parseCode { model | code = code, input = input }
 
 parseCode : Model -> Model
 parseCode model =
   { model |
-      output <-
+      output =
         case (Bf.Interpreter.parse model.code model.input) of
           Ok msg -> msg
           Err msg -> msg
